@@ -119,29 +119,45 @@ export async function generatePaidSuite(data, log = console.log) {
     }
     finalPrompt += STRICT_RULES;
 
+    // Model fallback chain: try newest to oldest when overloaded
+    const MODEL_FALLBACK_CHAIN = [
+        'claude-sonnet-4-6',
+        'claude-3-5-sonnet-20241022',
+        'claude-haiku-4-5',
+        'claude-3-haiku-20240307'
+    ];
 
     let attempts = 0;
     let content = null;
-    const maxAttempts = 8;
-    let modelToUse = 'claude-sonnet-4-6';
-    
+    const maxAttempts = 12;
+    let modelIndex = 0;
+
     while (attempts < maxAttempts && !content) {
+        const modelToUse = MODEL_FALLBACK_CHAIN[modelIndex];
         try {
+            log(`🤖 Attempting generation with ${modelToUse} (Attempt ${attempts + 1}/${maxAttempts})...`);
             content = await callClaude(finalPrompt, modelToUse);
         } catch (e) {
             attempts++;
-            if (modelToUse === 'claude-sonnet-4-6' && attempts === 4) {
-                log(`⚠️ Sonnet is struggling. Switching to Fallback Model (Haiku 4.5) for Master Report...`);
-                modelToUse = 'claude-haiku-4-5';
+            const isOverloaded = e.message?.includes('overloaded') || e.message?.includes('529') || e.message?.includes('529');
+
+            // Rotate to next model after every 3 failures on the same model
+            if (attempts % 3 === 0 && modelIndex < MODEL_FALLBACK_CHAIN.length - 1) {
+                modelIndex++;
+                log(`⚠️ Switching to fallback model: ${MODEL_FALLBACK_CHAIN[modelIndex]}`);
             }
-            const waitTime = attempts * 5000; 
-            log(`⚠️ Claude ${modelToUse} Overloaded. Retry ${attempts}/${maxAttempts} in ${waitTime/1000}s...`);
-            if (attempts >= maxAttempts) break; 
+
+            // Exponential backoff: 10s, 20s, 30s, 40s... capped at 60s
+            const waitTime = Math.min(attempts * 10000, 60000);
+            log(`⚠️ Claude ${modelToUse} ${isOverloaded ? 'Overloaded' : 'Error: ' + e.message}. Retry ${attempts}/${maxAttempts} in ${waitTime / 1000}s...`);
+
+            if (attempts >= maxAttempts) break;
             await new Promise(resolve => setTimeout(resolve, waitTime));
         }
     }
 
-    if (!content) throw new Error("Failed to generate Master Report content after multiple attempts.");
+    if (!content) throw new Error("Failed to generate Master Report content after multiple attempts across all models.");
+
 
     const pdfBuffer = await generateFullReportPdf(data, content);
     const pdfUrl = savePdf(pdfBuffer, 'Master_Assessment_Report');
