@@ -1,0 +1,46 @@
+{
+    "masterReport": "http://localhost:3000/reports/Master_Assessment_Report_d5ae7c31138297a0.pdf",
+    "certificate": "http://localhost:3000/reports/Accreditation_Certificate_9d93bee50fb670a5.pdf",
+    "policies": [
+        {
+            "id": "csr_esg",
+            "title": "CSR and ESG Commitment Statement",
+            "url": "http://localhost:3000/reports/csr_esg_3a0ad3418fc500f1.pdf"
+        },
+        {
+            "id": "community",
+            "title": "Community and Social Impact Policy",
+            "url": "http://localhost:3000/reports/community_fe8a50d2e3c7bd99.pdf"
+        },
+        {
+            "id": "environmental",
+            "title": "Environmental Policy",
+            "url": "http://localhost:3000/reports/environmental_3cf7596604a870e8.pdf"
+        },
+        {
+            "id": "equality",
+            "title": "Equality and Diversity Policy",
+            "url": "http://localhost:3000/reports/equality_0fc93fb6436ab823.pdf"
+        },
+        {
+            "id": "ethical",
+            "title": "Ethical Trading Policy",
+            "url": "http://localhost:3000/reports/ethical_70feca20c8301411.pdf"
+        },
+        {
+            "id": "governance",
+            "title": "Governance and Responsibility Policy",
+            "url": "http://localhost:3000/reports/governance_1beae44bdcb7941d.pdf"
+        },
+        {
+            "id": "slavery",
+            "title": "Modern Slavery Statement",
+            "url": "http://localhost:3000/reports/slavery_3b8514313ad4dfa9.pdf"
+        },
+        {
+            "id": "workforce",
+            "title": "Workforce and Wellbeing Policy",
+            "url": "http://localhost:3000/reports/workforce_cc0cf25f291cf3b9.pdf"
+        }
+    ]
+}
