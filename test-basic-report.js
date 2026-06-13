@@ -5,12 +5,12 @@ async function testFivePoundReport() {
         industry: "Food & Beverage",
         businessDescription: "A local organic bakery focused on sustainable ingredients and community engagement.",
         companyUrl: "https://artisanalbakery.co.uk",
-        isMember: false, // This triggers the £5 "potential" report logic
-        webhookUrl: "https://www.csrcomplete.co.uk/_functions/testWebhook",
+        isMember: true, // Now all reports are paid (member) under UKRBA
+        webhookUrl: "https://www.ukrba.co.uk/_functions/testWebhook",
         q1: "Yes", q5: "Yes", q10: "Yes", q15: "Yes", q20: "Yes" // Some yes answers to get a level
     };
 
-    console.log(`🚀 Triggering £5 Basic Report Assessment for: ${body.businessName}...`);
+    console.log(`🚀 Triggering UKRBA Paid Assessment for: ${body.businessName}...`);
 
     try {
         const response = await fetch(url, {

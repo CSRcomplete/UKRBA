@@ -6,7 +6,7 @@ async function testRailway() {
         url: "https://example.com",
         describeBusiness: "A test business",
         namePolicyOwner: "Test Owner",
-        webhookUrl: "https://www.csrcomplete.co.uk/_functions/reportReady", // Pinging their webhook
+        webhookUrl: "https://www.ukrba.co.uk/_functions/reportReady", // Pinging their webhook
         email: "test@example.com", // This will trigger the invalid email error on their end, but we will see if the backend runs!
         q4: "Yes", q5: "Yes", q6: "Yes", q7: "Yes", q8: "Yes",
         q10: "Yes", q11: "Yes", q12: "Yes", q13: "Yes", q14: "Yes",

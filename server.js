@@ -101,10 +101,10 @@ app.use('/reports', express.static('public/reports'));
  * - Non-member: 1-page Summary Audit
  */
 async function handleFormSubmission(userData) {
-    // Force isMember = true to always generate the full 8-page report, certificate, and badge
+    // Force paid flow for UKRBA
     const isMember = true;
     
-    log(`Form Submission Received for UKRBA Report (${userData.businessName || userData.title || 'Unknown'})`);
+    log(`Form Submission Received. UKRBA Paid Suite: ${isMember ? 'YES' : 'NO'} (${userData.businessName || userData.title || 'Unknown'})`);
 
     // Run in the background
     setImmediate(async () => {
@@ -112,7 +112,7 @@ async function handleFormSubmission(userData) {
             let downloadUrl;
             let accreditationLevel;
 
-            log(`Processing UKRBA Submission...`);
+            log(`Processing Submission (UKRBA Paid Suite)...`);
             
             let websiteText = "No website provided.";
             const targetUrl = userData.company_url || userData.companyUrl || userData.url;
@@ -126,20 +126,22 @@ async function handleFormSubmission(userData) {
             downloadUrl = suiteResults.downloadUrl;
             accreditationLevel = suiteResults.level;
 
-            try {
-                log("Generating personalized UKRBA follow-up emails...");
-                const emailData = {
-                    businessName: userData.title || userData.businessName || "Business Owner",
-                    websiteText: websiteText || "No website data available.",
-                    assessmentContext: `Level: ${accreditationLevel}, Position: ${userData.overallPosition}`
-                };
-                const emailJsonString = await generateAI(EMAIL_SEQUENCE_PROMPT, emailData, "EMAIL_SEQUENCE");
-                userData.generatedEmails = JSON.parse(emailJsonString);
-                log("✅ Personalized emails generated successfully.");
-            } catch (e) {
-                logError("❌ Email generation failed:", e.message);
-                // Attach error to userData so we can see it in the webhook
-                userData.emailError = e.message;
+            if (!isMember) {
+                try {
+                    log("Generating personalized emails for £5 user...");
+                    const emailData = {
+                        businessName: userData.title || userData.businessName || "Business Owner",
+                        websiteText: websiteText || "No website data available.",
+                        assessmentContext: `Level: ${accreditationLevel}, Position: ${userData.overallPosition}`
+                    };
+                    const emailJsonString = await generateAI(EMAIL_SEQUENCE_PROMPT, emailData, "EMAIL_SEQUENCE");
+                    userData.generatedEmails = JSON.parse(emailJsonString);
+                    log("✅ Personalized emails generated successfully.");
+                } catch (e) {
+                    logError("❌ Email generation failed:", e.message);
+                    // Attach error to userData so we can see it in the webhook
+                    userData.emailError = e.message;
+                }
             }
 
             // Webhook Notification
@@ -149,14 +151,14 @@ async function handleFormSubmission(userData) {
                 const payload = {
                     downloadUrl: downloadUrl,
                     certificateUrl: suiteResults.certificateUrl,
-                    badgeUrl: suiteResults.badgeUrl,
+                    badgeUrl: suiteResults.badgeUrl, // Added this
                     email: userData.email,
                     memberId: userData.memberId,
                     accreditationLevel: accreditationLevel,
-                    status: 'completed'
+                    status: isMember ? 'paid_suite_completed' : 'completed'
                 };
 
-                if (userData.generatedEmails) {
+                if (!isMember && userData.generatedEmails) {
                     const emails = userData.generatedEmails;
                     payload.email1Body = emails.email1?.body;
                     payload.email1Subject = emails.email1?.subject;
@@ -170,7 +172,9 @@ async function handleFormSubmission(userData) {
                     payload.emailError = userData.emailError;
                 }
 
-                payload.policies = [{ id: 'master-report', title: 'UKRBA Assessment Report', url: downloadUrl }];
+                if (isMember) {
+                    payload.policies = [{ id: 'master-report', title: 'Master Assessment Report', url: downloadUrl }];
+                }
 
                 log(`[STAGE 4] Sending payload to Wix for ${userData.memberId || userData.email}`);
                 
@@ -215,12 +219,12 @@ app.post('/api/submit-form', (req, res) => {
 });
 
 /**
- * Backward compatibility: Free Summary endpoint
+ * Backward compatibility: Free Summary endpoint (Now forced paid under UKRBA)
  */
 app.post('/api/generate-free-summary', (req, res) => {
-    req.body.isMember = false; // Force free
+    req.body.isMember = true; // Force paid
     handleFormSubmission(req.body);
-    res.status(202).json({ status: 'accepted', message: 'Free summary generation started.' });
+    res.status(202).json({ status: 'accepted', message: 'UKRBA paid suite generation started.' });
 });
 
 /**
@@ -229,7 +233,7 @@ app.post('/api/generate-free-summary', (req, res) => {
 app.post('/api/generate-paid-suite', (req, res) => {
     req.body.isMember = true; // Force paid
     handleFormSubmission(req.body);
-    res.status(202).json({ status: 'accepted', message: 'Paid suite generation started.' });
+    res.status(202).json({ status: 'accepted', message: 'UKRBA paid suite generation started.' });
 });
  
  /**

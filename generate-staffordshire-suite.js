@@ -87,7 +87,7 @@ async function runGenerationPipeline() {
         }
 
         console.log("\n==================================================================");
-        console.log("🎉 ALL CSR COMPLETE DOCUMENTS GENERATED SUCCESSFULLY!");
+        console.log("🎉 ALL UKRBA DOCUMENTS GENERATED SUCCESSFULLY!");
         console.log("==================================================================");
         
         // Print Summary to terminal

@@ -136,7 +136,7 @@ export async function generatePdfFromJSON(reportData) {
             ${sectionsHtml}
 
             <div class="footer">
-                This document is a summary of the independent CSR and ESG assessment conducted by UKRBA (UK Responsible Business Association).<br>
+                This document is a summary of the independent CSR and ESG assessment conducted by UKRBA.<br>
                 For the full accreditation report, please refer to the member dashboard.
             </div>
         </body>
@@ -161,7 +161,7 @@ async function generatePdf(htmlContent, footerTemplate = null) {
 
         const defaultFooter = `
             <div style="font-family: Arial; font-size: 8pt; color: #475569; width: 100%; padding: 0 40px; border-top: 1px solid #CBD5E1; display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                <span>Verified and issued by UKRBA (UK Responsible Business Association)</span>
+                <span>Verified and issued by UKRBA</span>
                 <span>Confidential Business Assessment</span>
             </div>
         `;
@@ -311,7 +311,7 @@ export async function generateCertificatePdf(data, level) {
                 <div class="cert-title">CERTIFICATE OF EXCELLENCE</div>
                 <p style="font-size: 18pt; color: #64748B;">This is to certify that</p>
                 <div class="company-name">${data.businessName.toUpperCase()}</div>
-                <p class="award-text">has successfully completed the UKRBA assessment framework and is hereby recognized for their commitment to responsible business practices.</p>
+                <p class="award-text">has successfully completed the CSR and ESG assessment framework and is hereby recognized for their commitment to responsible business practices.</p>
                 <div class="level-box">UKRBA LEVEL ${level}</div>
 
                 <div class="footer">
@@ -397,7 +397,7 @@ export async function generateFullReportPdf(data, content) {
         <body>
             <div class="report-header">
                 <div>
-                    <div style="font-size: 16pt; font-weight: bold; text-transform: uppercase; max-width: 500px;">${data.report_header_title || 'UKRBA & ESG ASSESSMENT REPORT'}</div>
+                    <div style="font-size: 16pt; font-weight: bold; text-transform: uppercase; max-width: 500px;">${data.report_header_title || 'CSR & ESG ASSESSMENT REPORT'}</div>
                     <div style="color: ${palette.accentGreen}; font-weight: bold; font-size: 12pt; margin-top: 5px;">${data.accreditation_status_label || 'Accreditation Level'}: ${data.level_display || ('UKRBA Level ' + data.level)}</div>
                 </div>
                 <div style="text-align: right; font-size: 9pt; color: #94A3B8;">DATE: ${data.reportDate || new Date().toLocaleDateString('en-GB')}</div>

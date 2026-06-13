@@ -1,7 +1,7 @@
 {
-  "name": "csr-complete-backend",
+  "name": "ukrba-backend",
   "version": "1.0.0",
-  "description": "AI Report Generator Backend",
+  "description": "UKRBA AI Report Generator Backend",
   "main": "server.js",
   "type": "module",
   "scripts": {

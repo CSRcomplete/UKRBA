@@ -23,7 +23,7 @@ const businessData = {
 - Operates 10 sector-specific business forums advocating for sustainable growth and fair trade.
     `,
     diaryUrl: "https://staffordshirechambers.co.uk/news/",
-    webhookUrl: "https://www.csrcomplete.co.uk/_functions/paidSuiteReady" // Mock webhook
+    webhookUrl: "https://www.ukrba.co.uk/_functions/paidSuiteReady" // Mock webhook
 };
 
 const BASE_URL = "https://csr-complete-backend-production.up.railway.app";

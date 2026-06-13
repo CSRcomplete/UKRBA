@@ -10,7 +10,7 @@ async function testPaidSuite() {
         wasteLevel: "Low",
         energyUsage: "High (Electric Fleet)",
         memberId: "test-paid-user-001",
-        webhookUrl: "https://www.csrcomplete.co.uk/_functions/paidSuiteReady" // Mock webhook
+        webhookUrl: "https://www.ukrba.co.uk/_functions/paidSuiteReady" // Mock webhook
     };
 
     console.log("🚀 Triggering Paid Suite Generation...");

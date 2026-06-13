@@ -1,7 +1,7 @@
 
 
 async function testWebhook() {
-    const webhookUrl = "https://www.csrcomplete.co.uk/_functions/reportReady";
+    const webhookUrl = "https://www.ukrba.co.uk/_functions/reportReady";
     const body = {
         downloadUrl: "https://example.com/dummy.pdf",
         email: "test@example.com"

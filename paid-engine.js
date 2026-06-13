@@ -27,8 +27,9 @@ You MUST follow these rules exactly. Any violation of these rules makes the docu
    - The policy should sound like a credible, responsible UK business that is putting proper systems in place.
 
 5. NO UNREALISTIC COMMITTEES / AUTHORING INFO:
-    - Under the document header, you must include the following line exactly:
-     "Document Prepared By: UKRBA (UK Responsible Business Association)"
+   - Do not use wording such as: "Steering Committee", "ESG Steering Committee", "Governance Committee", or "Internal Committee" unless specifically provided by the user.
+   - Under the document header, you must include the following line exactly:
+     "Document Prepared By: UKRBA"
 
 6. BUSINESS SPECIFIC POLICY RULE:
    - The policy must be written around the specific business reality of this company based on the provided details (their activities, sector, workforce, suppliers, and realistic ESG risks).
@@ -38,7 +39,7 @@ You MUST follow these rules exactly. Any violation of these rules makes the docu
 
 
 export async function generatePaidSuite(data, log = console.log) {
-    log(`Starting UKRBA (Master Report) Generation for: ${data.businessName || data.title}`);
+    log(`Starting Paid Suite (Master Report) Generation for: ${data.businessName || data.title}`);
     
     const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN 
         ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
@@ -93,7 +94,7 @@ export async function generatePaidSuite(data, log = console.log) {
     data.diaryUrl = data.diaryUrl || data.q21 || data.url || "Not provided"; // Fallback for diary
 
     // 1c. Membership Status Wording
-    const isMember = true; // Always true to generate the full free 8-page report, certificate, and badge for everyone
+    const isMember = true;
     if (isMember) {
         data.report_header_title = `UKRBA ACCREDITED, LEVEL ${level} Full CSR and ESG Assessment Report`;
         data.accreditation_status_label = "Accreditation Level";
@@ -119,45 +120,29 @@ export async function generatePaidSuite(data, log = console.log) {
     }
     finalPrompt += STRICT_RULES;
 
-    // Model fallback chain: try newest to oldest when overloaded
-    const MODEL_FALLBACK_CHAIN = [
-        'claude-sonnet-4-6',
-        'claude-3-5-sonnet-20241022',
-        'claude-haiku-4-5',
-        'claude-3-haiku-20240307'
-    ];
 
     let attempts = 0;
     let content = null;
-    const maxAttempts = 12;
-    let modelIndex = 0;
-
+    const maxAttempts = 8;
+    let modelToUse = 'claude-sonnet-4-6';
+    
     while (attempts < maxAttempts && !content) {
-        const modelToUse = MODEL_FALLBACK_CHAIN[modelIndex];
         try {
-            log(`🤖 Attempting generation with ${modelToUse} (Attempt ${attempts + 1}/${maxAttempts})...`);
             content = await callClaude(finalPrompt, modelToUse);
         } catch (e) {
             attempts++;
-            const isOverloaded = e.message?.includes('overloaded') || e.message?.includes('529') || e.message?.includes('529');
-
-            // Rotate to next model after every 3 failures on the same model
-            if (attempts % 3 === 0 && modelIndex < MODEL_FALLBACK_CHAIN.length - 1) {
-                modelIndex++;
-                log(`⚠️ Switching to fallback model: ${MODEL_FALLBACK_CHAIN[modelIndex]}`);
+            if (modelToUse === 'claude-sonnet-4-6' && attempts === 4) {
+                log(`⚠️ Sonnet is struggling. Switching to Fallback Model (Haiku 4.5) for Master Report...`);
+                modelToUse = 'claude-haiku-4-5';
             }
-
-            // Exponential backoff: 10s, 20s, 30s, 40s... capped at 60s
-            const waitTime = Math.min(attempts * 10000, 60000);
-            log(`⚠️ Claude ${modelToUse} ${isOverloaded ? 'Overloaded' : 'Error: ' + e.message}. Retry ${attempts}/${maxAttempts} in ${waitTime / 1000}s...`);
-
-            if (attempts >= maxAttempts) break;
+            const waitTime = attempts * 5000; 
+            log(`⚠️ Claude ${modelToUse} Overloaded. Retry ${attempts}/${maxAttempts} in ${waitTime/1000}s...`);
+            if (attempts >= maxAttempts) break; 
             await new Promise(resolve => setTimeout(resolve, waitTime));
         }
     }
 
-    if (!content) throw new Error("Failed to generate Master Report content after multiple attempts across all models.");
-
+    if (!content) throw new Error("Failed to generate Master Report content after multiple attempts.");
 
     const pdfBuffer = await generateFullReportPdf(data, content);
     const pdfUrl = savePdf(pdfBuffer, 'Master_Assessment_Report');

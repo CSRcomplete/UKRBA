@@ -1,5 +1,5 @@
 $headers = @{
-    "Authorization" = "token YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
+    "Authorization" = "token <GITHUB_TOKEN>"
     "Accept" = "application/vnd.github.v3+json"
 }
 $body = @{
