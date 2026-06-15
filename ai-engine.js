@@ -9,7 +9,7 @@ export async function generateAI(systemPrompt, userData, reportKey) {
     }
 
     const body = {
-        model: "claude-haiku-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 3000,
         system: systemPrompt,
         messages: [{
@@ -59,7 +59,7 @@ export async function generateAI(systemPrompt, userData, reportKey) {
 /**
  * Raw text generation for Policies
  */
-export async function callClaude(prompt, model = "claude-haiku-4-5") {
+export async function callClaude(prompt, model = "claude-haiku-4-5-20251001") {
     const apiKey = process.env.CLAUDE_API_KEY;
     const body = {
         model: model,

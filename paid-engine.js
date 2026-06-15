@@ -131,12 +131,18 @@ export async function generatePaidSuite(data, log = console.log) {
             content = await callClaude(finalPrompt, modelToUse);
         } catch (e) {
             attempts++;
-            if (modelToUse === 'claude-sonnet-4-6' && attempts === 4) {
-                log(`⚠️ Sonnet is struggling. Switching to Fallback Model (Haiku 4.5) for Master Report...`);
-                modelToUse = 'claude-haiku-4-5';
+            const errorMsg = e.message || String(e);
+            
+            if (attempts === 3 && modelToUse === 'claude-sonnet-4-6') {
+                log(`⚠️ Sonnet is struggling (Error: ${errorMsg}). Switching to Fallback Model (Haiku 4.5) for Master Report...`);
+                modelToUse = 'claude-haiku-4-5-20251001';
+            } else if (attempts === 5 && modelToUse === 'claude-haiku-4-5-20251001') {
+                log(`⚠️ Claude Haiku 4.5 is struggling (Error: ${errorMsg}). Switching to older high-availability Fallback Model (Claude 3.5 Haiku) for Master Report...`);
+                modelToUse = 'claude-3-5-haiku-20241022';
             }
+            
             const waitTime = attempts * 5000; 
-            log(`⚠️ Claude ${modelToUse} Overloaded. Retry ${attempts}/${maxAttempts} in ${waitTime/1000}s...`);
+            log(`⚠️ Claude ${modelToUse} Error: ${errorMsg}. Retry ${attempts}/${maxAttempts} in ${waitTime/1000}s...`);
             if (attempts >= maxAttempts) break; 
             await new Promise(resolve => setTimeout(resolve, waitTime));
         }
@@ -202,8 +208,8 @@ export async function generateSingleAsset(data, assetId, log = console.log) {
     finalPrompt += STRICT_RULES;
 
 
-    // Always use Haiku for single policies (instant speed)
-    const content = await callClaude(finalPrompt, 'claude-haiku-4-5');
+    // Always use Claude Haiku 4.5 for single policies (instant speed)
+    const content = await callClaude(finalPrompt, 'claude-haiku-4-5-20251001');
     const pdfBuffer = await generatePolicyPdf(data, policy.title, content);
     
     const fileId = crypto.randomBytes(8).toString('hex');
