@@ -218,7 +218,10 @@ export async function generatePolicyPdf(data, title, content) {
         <body>
             <div class="header">
                 <h1 class="policy-title">${title}</h1>
-                <div class="organisation-line">Organisation: ${data.businessName || data.business_name || 'Not Provided'}</div>
+                <div class="organisation-line" style="display: flex; justify-content: space-between;">
+                    <span>Organisation: ${data.businessName || data.business_name || 'Not Provided'}</span>
+                    <span>Membership No: ${data.membershipNumber || 'PENDING'}</span>
+                </div>
             </div>
             <div class="content">${formattedContent}</div>
             <div class="footer">
@@ -313,6 +316,7 @@ export async function generateCertificatePdf(data, level) {
                 <div class="company-name">${data.businessName.toUpperCase()}</div>
                 <p class="award-text">has successfully completed the CSR and ESG assessment framework and is hereby recognized for their commitment to responsible business practices.</p>
                 <div class="level-box">UKRBA LEVEL ${level}</div>
+                <div style="font-size: 16pt; color: #475569; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px;">MEMBERSHIP NO: ${data.membershipNumber || 'PENDING'}</div>
 
                 <div class="footer">
                     <div class="sig-box">
@@ -402,7 +406,17 @@ export async function generateFullReportPdf(data, content) {
                 </div>
                 <div style="text-align: right; font-size: 9pt; color: #94A3B8;">DATE: ${data.reportDate || new Date().toLocaleDateString('en-GB')}</div>
             </div>
-            <div class="accreditation-box">Organisation: ${data.businessName}<br>${data.overall_position_label || 'Overall Position'}: ${data.overallPosition}</div>
+            <div class="accreditation-box">
+                <table style="width: 100%; border-collapse: collapse; font-weight: bold; color: ${palette.primaryNavy}; font-size: 11pt;">
+                    <tr>
+                        <td style="padding: 2px 0;">Organisation: ${data.businessName}</td>
+                        <td style="text-align: right; padding: 2px 0;">Membership No: ${data.membershipNumber || 'PENDING'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px 0 2px 0;" colspan="2">${data.overall_position_label || 'Overall Position'}: ${data.overallPosition}</td>
+                    </tr>
+                </table>
+            </div>
             <div class="content">${cleanContent}</div>
         </body>
         </html>
