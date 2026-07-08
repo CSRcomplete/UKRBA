@@ -26,7 +26,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.get('/', (req, res) => {
-    res.send('AI Engine is LIVE and READY.');
+    res.json({
+        status: 'AI Engine is LIVE and READY.',
+        version: '1.0.2',
+        deployedAt: '2026-07-08T14:59:00Z'
+    });
 });
 
 app.get('/api/list-reports', (req, res) => {
