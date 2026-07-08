@@ -126,7 +126,7 @@ async function handleFormSubmission(userData) {
             downloadUrl = suiteResults.downloadUrl;
             accreditationLevel = suiteResults.level;
 
-            if (!isMember) {
+            if (!isMember || userData.isFivePoundPlan || !userData.isMember) {
                 try {
                     log("Generating personalized emails for £5 user...");
                     const emailData = {
@@ -134,7 +134,12 @@ async function handleFormSubmission(userData) {
                         websiteText: websiteText || "No website data available.",
                         assessmentContext: `Level: ${accreditationLevel}, Position: ${userData.overallPosition}`
                     };
-                    const emailJsonString = await generateAI(EMAIL_SEQUENCE_PROMPT, emailData, "EMAIL_SEQUENCE");
+                    
+                    let formattedPrompt = EMAIL_SEQUENCE_PROMPT;
+                    formattedPrompt = formattedPrompt.replace(/{businessName}/g, emailData.businessName);
+                    formattedPrompt = formattedPrompt.replace(/{websiteText}/g, emailData.websiteText);
+
+                    const emailJsonString = await generateAI(formattedPrompt, emailData, "EMAIL_SEQUENCE");
                     userData.generatedEmails = JSON.parse(emailJsonString);
                     log("✅ Personalized emails generated successfully.");
                 } catch (e) {
@@ -155,10 +160,10 @@ async function handleFormSubmission(userData) {
                     email: userData.email,
                     memberId: userData.memberId,
                     accreditationLevel: accreditationLevel,
-                    status: isMember ? 'paid_suite_completed' : 'completed'
+                    status: userData.isFivePoundPlan ? 'five_pound_completed' : (isMember ? 'paid_suite_completed' : 'completed')
                 };
 
-                if (!isMember && userData.generatedEmails) {
+                if ((!isMember || userData.isFivePoundPlan || !userData.isMember) && userData.generatedEmails) {
                     const emails = userData.generatedEmails;
                     payload.email1Body = emails.email1?.body;
                     payload.email1Subject = emails.email1?.subject;

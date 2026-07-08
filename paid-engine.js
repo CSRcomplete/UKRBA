@@ -155,9 +155,9 @@ export async function generatePaidSuite(data, log = console.log) {
     
     log(`✅ Finished: Master Assessment Report`);
 
-    // 3. Generate Certificate ONLY for Full Members
+    // 3. Generate Certificate ONLY for Full Members (and NOT for £5 plan users)
     let certificateUrl = null;
-    if (isMember) {
+    if (isMember && !data.isFivePoundPlan) {
         log(`Generating Accreditation Certificate for ${data.businessName}...`);
         const certBuffer = await generateCertificatePdf(data, level);
         certificateUrl = savePdf(certBuffer, 'Accreditation_Certificate');
@@ -166,7 +166,7 @@ export async function generatePaidSuite(data, log = console.log) {
 
     return {
         level: level,
-        badgeUrl: badgeUrl,
+        badgeUrl: data.isFivePoundPlan ? null : badgeUrl,
         downloadUrl: pdfUrl,
         certificateUrl: certificateUrl,
         title: 'Master Assessment Report'
