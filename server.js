@@ -33,6 +33,10 @@ app.get('/', (req, res) => {
     });
 });
 
+app.get('/api/logs', (req, res) => {
+    res.json(globalLogs);
+});
+
 app.get('/api/list-reports', (req, res) => {
     const dirPath = path.join(process.cwd(), 'public', 'reports');
     if (!fs.existsSync(dirPath)) {
