@@ -144,8 +144,8 @@ async function handleFormSubmission(userData) {
                     };
                     
                     let formattedPrompt = EMAIL_SEQUENCE_PROMPT;
-                    formattedPrompt = formattedPrompt.replace(/{businessName}/g, emailData.businessName);
-                    formattedPrompt = formattedPrompt.replace(/{websiteText}/g, emailData.websiteText);
+                    formattedPrompt = formattedPrompt.replace(/{businessName}/g, () => emailData.businessName);
+                    formattedPrompt = formattedPrompt.replace(/{websiteText}/g, () => emailData.websiteText);
 
                     const emailJsonString = await generateAI(formattedPrompt, emailData, "EMAIL_SEQUENCE");
                     userData.generatedEmails = JSON.parse(emailJsonString);
@@ -159,7 +159,14 @@ async function handleFormSubmission(userData) {
 
             // Webhook Notification
             if (userData.webhookUrl) {
-                log(`[STAGE 3] Pinging Wix Webhook: ${userData.webhookUrl}`);
+                let targetWebhook = userData.webhookUrl;
+                if (targetWebhook.includes('ukrba.co.uk')) {
+                    targetWebhook = targetWebhook.replace('ukrba.co.uk', 'ukrba.org');
+                } else if (targetWebhook.includes('csrcomplete.co.uk')) {
+                    targetWebhook = targetWebhook.replace('csrcomplete.co.uk', 'ukrba.org');
+                }
+                
+                log(`[STAGE 3] Pinging Wix Webhook: ${targetWebhook}`);
                 
                 const payload = {
                     downloadUrl: downloadUrl,
@@ -191,7 +198,7 @@ async function handleFormSubmission(userData) {
 
                 log(`[STAGE 4] Sending payload to Wix for ${userData.memberId || userData.email}`);
                 
-                const webhookResponse = await fetch(userData.webhookUrl, {
+                const webhookResponse = await fetch(targetWebhook, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -206,8 +213,14 @@ async function handleFormSubmission(userData) {
         } catch (error) {
             logError("Background processing error:", error.message);
             if (userData.webhookUrl) {
+                let targetWebhook = userData.webhookUrl;
+                if (targetWebhook.includes('ukrba.co.uk')) {
+                    targetWebhook = targetWebhook.replace('ukrba.co.uk', 'ukrba.org');
+                } else if (targetWebhook.includes('csrcomplete.co.uk')) {
+                    targetWebhook = targetWebhook.replace('csrcomplete.co.uk', 'ukrba.org');
+                }
                 try {
-                    await fetch(userData.webhookUrl, {
+                    await fetch(targetWebhook, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ error: error.message, status: 'failed' })
