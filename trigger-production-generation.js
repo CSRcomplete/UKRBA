@@ -26,7 +26,7 @@ const businessData = {
     webhookUrl: "https://www.ukrba.co.uk/_functions/paidSuiteReady" // Mock webhook
 };
 
-const BASE_URL = "https://csr-complete-backend-production.up.railway.app";
+const BASE_URL = "https://ukrba-production.up.railway.app";
 
 async function run() {
     console.log("==================================================================");

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const BASE_URL = "https://csr-complete-backend-production.up.railway.app";
+const BASE_URL = "https://ukrba-production.up.railway.app";
 const LOCAL_SUMMARY_PATH = path.join(process.cwd(), 'public', 'reports', 'staffordshire_chambers_suite.json');
 
 async function run() {

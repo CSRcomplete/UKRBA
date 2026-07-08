@@ -1,4 +1,4 @@
-const NODE_SERVER_URL = "https://csr-complete-backend-production.up.railway.app";
+const NODE_SERVER_URL = "https://ukrba-production.up.railway.app";
 
 async function testRailway() {
     const formData = {
