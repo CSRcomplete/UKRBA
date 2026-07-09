@@ -100,7 +100,7 @@ export async function generatePaidSuite(data, log = console.log) {
         data.accreditation_status_label = "Accreditation Level";
         data.level_display = `UKRBA Level ${level}`;
         data.overall_position_label = "Overall Position";
-        data.status_instruction = "This is a formal accreditation. State clearly that the business HAS BEEN AWARDED this level and is now UKRBA Accredited.";
+        data.status_instruction = "This is a formal accreditation. State clearly that the business HAS BEEN AWARDED this level and is now UKRBA Accredited. You MUST NOT use conditional language like 'you would get the accreditation' or 'indicates a potential for accreditation'. Write definitively that they ARE accredited.";
     } else {
         data.report_header_title = `UKRBA ASSESSMENT: Preliminary CSR and ESG Report`;
         data.accreditation_status_label = "Accreditation Level";
