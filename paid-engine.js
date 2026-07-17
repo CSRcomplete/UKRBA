@@ -49,6 +49,7 @@ export async function generatePaidSuite(data, log = console.log) {
     data.businessName = data.businessName || data.business_name || data.title;
     data.companyUrl = data.companyUrl || data.company_url || data.url;
     data.businessDescription = data.businessDescription || data.business_description || data.describeBusiness;
+    data.isFivePoundPlan = data.isFivePoundPlan === true || data.isFivePoundPlan === 'true' || data.isFivePoundPlan === 1 || data.isFivePoundPlan === '1';
 
     // Helper to save PDF
     const savePdf = (buffer, prefix) => {
@@ -95,7 +96,13 @@ export async function generatePaidSuite(data, log = console.log) {
 
     // 1c. Membership Status Wording
     const isMember = true;
-    if (isMember) {
+    if (data.isFivePoundPlan) {
+        data.report_header_title = `If you were a member you would be UKRBA Accredited Level ${level}`;
+        data.accreditation_status_label = "Accreditation Status";
+        data.level_display = `If you were a member you would be UKRBA Accredited Level ${level}`;
+        data.overall_position_label = "Projected Position";
+        data.status_instruction = "This is a pre-accreditation assessment report (5GBP report) used to help sell our main subscription plans (e.g. £59/month). You MUST NOT write anywhere that the accreditation has been granted, awarded, or is currently active. The tone throughout the entire report MUST be forward-looking, indicating that 'You will be accredited' (e.g. 'Upon activating your main subscription plan, you will be accredited at Level " + level + "'). Emphasize that the business qualifies for Level " + level + " and will receive full accreditation once they upgrade to one of our main plans (like the £59 plan). Make sure there is NO mention of accreditation already being active, granted, or awarded.";
+    } else if (isMember) {
         data.report_header_title = `UKRBA ACCREDITED, LEVEL ${level} Full CSR and ESG Assessment Report`;
         data.accreditation_status_label = "Accreditation Level";
         data.level_display = `UKRBA Level ${level}`;
@@ -115,9 +122,29 @@ export async function generatePaidSuite(data, log = console.log) {
 
     log(`Generating Master Assessment Report for ${data.businessName} (Level ${level})...`);
     let finalPrompt = masterPolicy.prompt;
+    
+    if (data.isFivePoundPlan) {
+        finalPrompt = finalPrompt
+            .replace("the overall accreditation position in plain terms", "the projected accreditation level they qualify for and will receive upon full plan activation (e.g. the £59 plan)")
+            .replace("a brief explanation of the UKRBA framework and what accreditation means", "a brief explanation of the UKRBA framework, what accreditation means, and how they will be accredited once they activate their main plan (e.g. the £59 plan)");
+    }
+
     for (const [key, value] of Object.entries(data)) {
         finalPrompt = finalPrompt.replace(new RegExp(`{${key}}`, 'g'), value || 'Not provided');
     }
+
+    if (data.isFivePoundPlan) {
+        finalPrompt += `
+=========================================
+PRE-ACCREDITATION & TONAL RULES (CRITICAL OVERRIDE):
+1. NO ACTIVE ACCREDITATION: Do not write anywhere in the report that the accreditation has been granted, awarded, achieved, or is active.
+2. FUTURE TONE ONLY: The tone must be "You will be accredited" or "The organization will be accredited" at Level ${level} upon activating their main subscription plan (such as the £59 plan).
+3. USE PENDING/PROJECTED TERMINOLOGY: Refer to the status as "Projected Accreditation Level", "Pending Activation", or "Qualified for Level ${level}".
+4. DO NOT USE "has been awarded" or "is accredited" or "has achieved". Instead, use "qualifies for", "will be awarded upon subscription activation", "is projected to be accredited at".
+=========================================
+`;
+    }
+
     finalPrompt += STRICT_RULES;
 
 
@@ -208,8 +235,35 @@ export async function generateSingleAsset(data, assetId, log = console.log) {
     finalPrompt += STRICT_RULES;
 
 
-    // Always use Claude Haiku 4.5 for single policies (instant speed)
-    const content = await callClaude(finalPrompt, 'claude-haiku-4-5-20251001');
+    // Use Claude Haiku 4.5 for speed, but fallback to Claude 3.5 Haiku if overloaded/rate-limited
+    let attempts = 0;
+    let content = null;
+    const maxAttempts = 5;
+    let modelToUse = 'claude-haiku-4-5-20251001';
+
+    while (attempts < maxAttempts && !content) {
+        try {
+            content = await callClaude(finalPrompt, modelToUse);
+        } catch (e) {
+            attempts++;
+            const errorMsg = e.message || String(e);
+            log(`⚠️ Claude ${modelToUse} Error during single asset generation: ${errorMsg}. Attempt ${attempts}/${maxAttempts}`);
+            
+            if (attempts === 2 && modelToUse === 'claude-haiku-4-5-20251001') {
+                log(`⚠️ Switching to fallback model (Claude 3.5 Haiku) for single asset...`);
+                modelToUse = 'claude-3-5-haiku-20241022';
+            }
+            
+            if (attempts >= maxAttempts) break;
+            const waitTime = attempts * 2000;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+    }
+
+    if (!content) {
+        throw new Error(`Failed to generate Single Asset ${assetId} after ${maxAttempts} attempts.`);
+    }
+
     const pdfBuffer = await generatePolicyPdf(data, policy.title, content);
     
     const fileId = crypto.randomBytes(8).toString('hex');
