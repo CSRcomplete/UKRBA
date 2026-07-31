@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import { PAID_POLICIES, ACCREDITATION_BADGES } from './paid-prompts.js';
 import { callClaude } from './ai-engine.js';
-import { generatePolicyPdf, generateCertificatePdf, generateFullReportPdf } from './pdf-generator.js';
+import { generatePolicyPdf, generateCertificatePdf, generateMembershipCertificatePdf, generateFullReportPdf } from './pdf-generator.js';
 
 const STRICT_RULES = `
 
@@ -182,13 +182,19 @@ PRE-ACCREDITATION & TONAL RULES (CRITICAL OVERRIDE):
     
     log(`✅ Finished: Master Assessment Report`);
 
-    // 3. Generate Certificate ONLY for Full Members (and NOT for £5 plan users)
+    // 3. Generate Certificate and Membership Certificate ONLY for Full Members (and NOT for £5 plan users)
     let certificateUrl = null;
+    let membershipCertificateUrl = null;
     if (isMember && !data.isFivePoundPlan) {
-        log(`Generating Accreditation Certificate for ${data.businessName}...`);
+        log(`Generating Accreditation Certificate (Level ${level}) for ${data.businessName}...`);
         const certBuffer = await generateCertificatePdf(data, level);
         certificateUrl = savePdf(certBuffer, 'Accreditation_Certificate');
         log(`✅ Finished: Accreditation Certificate`);
+
+        log(`Generating Membership Certificate (Level ${level}) for ${data.businessName}...`);
+        const membershipCertBuffer = await generateMembershipCertificatePdf(data, level);
+        membershipCertificateUrl = savePdf(membershipCertBuffer, 'Membership_Certificate');
+        log(`✅ Finished: Membership Certificate`);
     }
 
     return {
@@ -196,6 +202,7 @@ PRE-ACCREDITATION & TONAL RULES (CRITICAL OVERRIDE):
         badgeUrl: data.isFivePoundPlan ? null : badgeUrl,
         downloadUrl: pdfUrl,
         certificateUrl: certificateUrl,
+        membershipCertificateUrl: membershipCertificateUrl,
         title: 'Master Assessment Report'
     };
 }

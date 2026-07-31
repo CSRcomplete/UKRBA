@@ -171,6 +171,7 @@ async function handleFormSubmission(userData) {
                 const payload = {
                     downloadUrl: downloadUrl,
                     certificateUrl: suiteResults.certificateUrl,
+                    membershipCertificateUrl: suiteResults.membershipCertificateUrl,
                     badgeUrl: suiteResults.badgeUrl, // Added this
                     email: userData.email,
                     memberId: userData.memberId,
