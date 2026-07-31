@@ -1,5 +1,7 @@
 import puppeteer from 'puppeteer';
 import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 let cachedChromiumPath = null;
 function getChromiumPath() {
@@ -241,252 +243,69 @@ export async function generatePolicyPdf(data, title, content) {
     return await generatePdf(htmlContent, policyFooter);
 }
 
-// Colour theme per accreditation level (1 = green, 2 = blue, 3 = silver, 4 = gold, 5 = bronze/copper)
-const LEVEL_THEMES = {
-    1: { border: '#2F5233', bannerFrom: '#43713A', bannerTo: '#233D1E', badgeFrom: '#E7F3E2', badgeTo: '#345B2C', ring: '#2F5233', text: '#2F5233' },
-    2: { border: '#153A63', bannerFrom: '#1F4E85', bannerTo: '#0C2340', badgeFrom: '#E4EDF9', badgeTo: '#1F4E85', ring: '#153A63', text: '#153A63' },
-    3: { border: '#6B7788', bannerFrom: '#8D99AA', bannerTo: '#4B5563', badgeFrom: '#F2F4F7', badgeTo: '#8D99AA', ring: '#5B6576', text: '#475264' },
-    4: { border: '#B8860B', bannerFrom: '#D4AF37', bannerTo: '#96700D', badgeFrom: '#FCF1C7', badgeTo: '#C9971F', ring: '#96700D', text: '#8A6508' },
-    5: { border: '#8B5A2B', bannerFrom: '#B87333', bannerTo: '#6B4423', badgeFrom: '#F2E1CC', badgeTo: '#9C6530', ring: '#6B4423', text: '#6B4423' }
-};
+// Fixed canvas size of the supplied certificate template PNGs.
+const TEMPLATE_WIDTH = 1536;
+const TEMPLATE_HEIGHT = 1024;
 
-function getLevelTheme(level) {
-    return LEVEL_THEMES[level] || LEVEL_THEMES[1];
-}
+const templateDataUriCache = new Map();
 
-function toRoman(num) {
-    const map = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
-    let result = '';
-    for (const [value, symbol] of map) {
-        while (num >= value) {
-            result += symbol;
-            num -= value;
-        }
+function getTemplateDataUri(relativePath) {
+    if (!templateDataUriCache.has(relativePath)) {
+        const filePath = path.join(process.cwd(), relativePath);
+        const buffer = fs.readFileSync(filePath);
+        templateDataUriCache.set(relativePath, `data:image/png;base64,${buffer.toString('base64')}`);
     }
-    return result;
+    return templateDataUriCache.get(relativePath);
 }
 
-// Lays out a string along the top arc of a circle of the given radius (px), for the badge ring text.
-function arcText(text, radius) {
-    const chars = text.split('');
-    const totalAngle = 150;
-    const startAngle = -75;
-    const step = chars.length > 1 ? totalAngle / (chars.length - 1) : 0;
-    return chars.map((c, i) => {
-        const angle = startAngle + i * step;
-        return `<span style="position:absolute; left:50%; top:50%; width:0; height:0; transform: rotate(${angle}deg) translate(0, -${radius}px);">
-            <span style="position:absolute; left:-6px; top:-6px; display:block; transform: rotate(${-angle}deg); font-size:6.5pt; font-weight:700; letter-spacing:0.5px; color:#FFFFFF;">${c === ' ' ? '&nbsp;' : c}</span>
-        </span>`;
-    }).join('');
-}
-
-// Places evenly spaced beads around the full circumference of a circle of the given radius (px), for the badge's decorative outer ring.
-function beadRing(count, radius, color) {
-    let out = '';
-    for (let i = 0; i < count; i++) {
-        const angle = (360 / count) * i;
-        out += `<span style="position:absolute; left:50%; top:50%; width:0; height:0; transform: rotate(${angle}deg) translate(0, -${radius}px);">
-            <span style="position:absolute; left:-2px; top:-2px; width:4px; height:4px; border-radius:50%; background:${color}; display:block;"></span>
-        </span>`;
-    }
-    return out;
-}
-
-// Generic hand-drawn style signature mark, reused across every certificate (no real signature asset available).
-const SIGNATURE_SVG = `
-    <svg width="150" height="52" viewBox="0 0 150 52" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6 34 C 14 12, 22 12, 26 30 C 29 42, 33 24, 38 18 C 43 12, 46 30, 52 32 C 58 34, 60 14, 66 16 C 72 18, 70 36, 76 34 C 84 31, 84 8, 92 14 C 98 18, 94 34, 100 34 C 108 34, 110 14, 118 18 C 124 21, 122 30, 128 28"
-              fill="none" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M10 40 L 132 40" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
-    </svg>
-`;
-
-function buildBadgeHtml(theme, level) {
-    const year = toRoman(new Date().getFullYear());
-    return `
-        <div class="badge-outer" style="background: radial-gradient(circle at 35% 28%, ${theme.badgeFrom}, ${theme.badgeTo} 75%); border: 2px solid ${theme.ring};">
-            <div class="badge-decor">${beadRing(40, 116, '#FFFFFF')}</div>
-            <div class="badge-ring-text">${arcText('RESPONSIBLE BUSINESS STANDARD', 104)}</div>
-            <div class="badge-inner">
-                <div class="badge-shield" style="background: ${theme.ring};">&#10003;</div>
-                <div class="badge-name">UK SME<br>Responsible Business<br>Association</div>
-                <div class="badge-accredited">ACCREDITED</div>
-                <div class="badge-level">LEVEL ${level}</div>
-            </div>
-            <div class="badge-footer" style="background: ${theme.ring};">Verified in Practice<br>${year}</div>
-        </div>
-    `;
-}
-
-function buildCertificateHtml(data, level, variant) {
-    const theme = getLevelTheme(level);
-    const businessName = (data.businessName || 'YOUR BUSINESS').toUpperCase();
-    const isMembership = variant === 'membership';
-
-    // Level 3 (silver) reads poorly in colour, so those two keywords stay bold black there, matching the reference set.
-    const keywordColor = level === 3 ? '#0F172A' : theme.text;
-    const kw = (s) => `<span style="color:${keywordColor}; font-weight:700;">${s}</span>`;
-
-    const title = 'UK SME Responsible Business Association ' + (isMembership ? 'Membership Certificate' : 'Complete Accreditation Certificate');
-    const bannerText = isMembership
-        ? `UK SME Responsible Business Association<br>Accredited Member &ndash; LEVEL ${level}`
-        : `UK SME Responsible Business Association<br>Complete Accredited &ndash; LEVEL ${level}`;
-    const achievedText = isMembership
-        ? `is a verified member of the UK SME Responsible Business Association, holding accreditation`
-        : `has achieved`;
-    const bodyText = isMembership
-        ? `Membership is based on declared, recorded, and reviewable ${kw('Corporate Social Responsibility (CSR)')} and ${kw('Environmental, Social &amp; Governance (ESG)')} business practices assessed within the UK SME Responsible Business Association framework.`
-        : `This accreditation is based on declared, recorded, and reviewable ${kw('Corporate Social Responsibility (CSR)')} and ${kw('Environmental, Social &amp; Governance (ESG)')} business practices assessed within the UK SME Responsible Business Association framework.`;
-    const footerText = isMembership
-        ? `Membership reflects the organisation's current level of CSR and ESG practice maturity and is subject to ongoing review.`
-        : `Accreditation reflects the organisation's current level of CSR and ESG practice maturity and is subject to ongoing review.`;
+// Renders plain text overlays on top of a background template image (no drawn certificate design, just the client's own artwork).
+function buildImageCertificateHtml(imageDataUri, overlays) {
+    const overlayHtml = overlays.map(o => `
+        <div style="position:absolute; top:${o.top}; left:${o.left}; width:${o.width}; text-align:${o.textAlign || 'center'}; font-family:'Helvetica','Arial',sans-serif; font-size:${o.fontSize}; font-weight:${o.fontWeight || 700}; color:${o.color || '#0F172A'}; letter-spacing:${o.letterSpacing || 'normal'}; white-space:${o.whiteSpace || 'normal'};">${o.text}</div>
+    `).join('');
 
     return `
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                @page { size: 14in 9in; margin: 0; }
                 * { box-sizing: border-box; }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    font-family: 'Helvetica', 'Arial', sans-serif;
-                    width: 14in;
-                    height: 9in;
-                    background: #FFFFFF;
-                }
-                .frame {
-                    box-sizing: border-box;
-                    width: 100%;
-                    height: 100%;
-                    border: 3px solid ${theme.border};
-                    padding: 26px 60px;
+                body { margin: 0; padding: 0; width: ${TEMPLATE_WIDTH}px; height: ${TEMPLATE_HEIGHT}px; }
+                .cert {
                     position: relative;
-                }
-                .rule { border-top: 1px solid ${theme.border}; border-bottom: 1px solid ${theme.border}; height: 3px; margin: 0 0 24px 0; }
-                .rule.bottom { position: absolute; left: 60px; right: 60px; bottom: 22px; margin: 0; }
-                h1.title { font-size: 22pt; color: #0F172A; text-align: center; margin: 0 0 6px 0; font-weight: 600; white-space: nowrap; }
-                .subtitle { text-align: center; font-size: 13pt; color: #334155; margin: 0 0 22px 0; }
-                .certifies-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px 0; }
-                .hr-flank { flex: 1; max-width: 220px; border-top: 1px solid #94A3B8; }
-                .certifies-label { font-size: 12pt; color: #334155; white-space: nowrap; }
-                .business-name { text-align: center; font-size: 18pt; font-weight: 700; color: #0F172A; margin: 26px 0 6px 0; min-height: 26pt; border-bottom: 1px solid #CBD5E1; padding-bottom: 6px; }
-                .banner {
-                    background: linear-gradient(90deg, ${theme.bannerFrom}, ${theme.bannerTo});
-                    color: #FFFFFF;
-                    text-align: center;
-                    font-size: 18pt;
-                    font-weight: 700;
-                    line-height: 1.4;
-                    padding: 14px 40px;
-                    margin: 18px 300px 22px 0;
-                }
-                .body-text { text-align: center; font-size: 11.5pt; color: #1E293B; line-height: 1.6; max-width: 720px; margin: 0 0 14px 0; }
-                .footer-text { text-align: center; font-size: 11.5pt; color: #1E293B; line-height: 1.6; max-width: 720px; margin: 0 0 14px 0; }
-                .verified-at { position: absolute; left: 60px; bottom: 34px; font-size: 10.5pt; color: #1E293B; }
-                .verified-at strong { display: block; font-weight: 700; }
-                .signoff { position: absolute; right: 320px; bottom: 40px; text-align: center; }
-                .signoff .sig { height: 40px; display: flex; align-items: flex-end; justify-content: center; }
-                .signoff .line { border-top: 1px solid #94A3B8; margin-top: 4px; padding-top: 4px; font-size: 10.5pt; color: #1E293B; }
-
-                .badge-outer {
-                    position: absolute;
-                    top: 175px;
-                    right: 40px;
-                    width: 250px;
-                    height: 250px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-                }
-                .badge-decor, .badge-ring-text { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
-                .badge-inner {
-                    width: 190px;
-                    height: 190px;
-                    border-radius: 50%;
-                    background: #FFFFFF;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    text-align: center;
-                    padding-top: 8px;
-                    box-shadow: inset 0 0 0 1px #E2E8F0;
-                }
-                .badge-shield {
-                    width: 26px;
-                    height: 28px;
-                    clip-path: polygon(50% 0%, 100% 18%, 100% 62%, 50% 100%, 0% 62%, 0% 18%);
-                    color: #FFFFFF;
-                    font-size: 13pt;
-                    line-height: 28px;
-                    text-align: center;
-                    margin-bottom: 4px;
-                }
-                .badge-name { font-size: 8.5pt; font-weight: 700; color: #0F172A; line-height: 1.2; margin-bottom: 4px; }
-                .badge-accredited { font-size: 6.5pt; letter-spacing: 1.5px; color: #64748B; font-weight: 700; }
-                .badge-level { font-size: 15pt; font-weight: 700; color: ${theme.text}; }
-                .badge-footer {
-                    position: absolute;
-                    bottom: -4px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 210px;
-                    color: #FFFFFF;
-                    font-size: 7.5pt;
-                    font-weight: 700;
-                    text-align: center;
-                    line-height: 1.3;
-                    padding: 6px 0 8px 0;
-                    clip-path: polygon(0% 0%, 100% 0%, 100% 78%, 50% 100%, 0% 78%);
+                    width: ${TEMPLATE_WIDTH}px;
+                    height: ${TEMPLATE_HEIGHT}px;
+                    background-image: url(${imageDataUri});
+                    background-size: ${TEMPLATE_WIDTH}px ${TEMPLATE_HEIGHT}px;
+                    background-repeat: no-repeat;
                 }
             </style>
         </head>
         <body>
-            <div class="frame">
-                <div class="rule"></div>
-                <h1 class="title">${title}</h1>
-                <div class="subtitle">Corporate Social Responsibility (CSR) and Environmental, Social &amp; Governance (ESG)</div>
-
-                <div class="certifies-row">
-                    <div class="hr-flank"></div>
-                    <div class="certifies-label">This certifies that</div>
-                    <div class="hr-flank"></div>
-                </div>
-
-                <div class="business-name">${businessName}</div>
-
-                <div class="certifies-row" style="margin-top: 4px;">
-                    <div class="hr-flank"></div>
-                    <div class="certifies-label">${achievedText}</div>
-                    <div class="hr-flank"></div>
-                </div>
-
-                <div class="banner">${bannerText}</div>
-
-                <div class="body-text">${bodyText}</div>
-                <div class="footer-text">${footerText}</div>
-
-                <div class="verified-at">
-                    Verified at:
-                    <strong>ukrba.org</strong>
-                </div>
-
-                <div class="signoff">
-                    <div class="sig">${SIGNATURE_SVG}</div>
-                    <div class="line">Authorised by<br>UK SME Responsible Business Association</div>
-                </div>
-
-                ${buildBadgeHtml(theme, level)}
-
-                <div class="rule bottom"></div>
-            </div>
+            <div class="cert">${overlayHtml}</div>
         </body>
         </html>
     `;
+}
+
+function buildAccreditationCertificateHtml(data, level) {
+    const imageDataUri = getTemplateDataUri(`certificate-templates/accreditation/level-${level}.png`);
+    const businessName = (data.businessName || 'YOUR BUSINESS').toUpperCase();
+
+    return buildImageCertificateHtml(imageDataUri, [
+        { text: businessName, top: '338px', left: '420px', width: '710px', fontSize: '30px', whiteSpace: 'nowrap' }
+    ]);
+}
+
+function buildMembershipCertificateHtml(data) {
+    const imageDataUri = getTemplateDataUri('certificate-templates/membership/default.png');
+    const businessName = (data.businessName || 'YOUR BUSINESS').toUpperCase();
+    const memberSince = data.reportDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    return buildImageCertificateHtml(imageDataUri, [
+        { text: businessName, top: '392px', left: '350px', width: '860px', fontSize: '28px', whiteSpace: 'nowrap' },
+        { text: memberSince, top: '892px', left: '660px', width: '210px', fontSize: '15px', fontWeight: 600 }
+    ]);
 }
 
 async function renderCertificate(htmlContent) {
@@ -501,11 +320,12 @@ async function renderCertificate(htmlContent) {
     const browser = await puppeteer.launch(launchOptions);
     try {
         const page = await browser.newPage();
+        await page.setViewport({ width: TEMPLATE_WIDTH, height: TEMPLATE_HEIGHT });
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
         const pdfBuffer = await page.pdf({
-            width: '14in',
-            height: '9in',
+            width: `${TEMPLATE_WIDTH}px`,
+            height: `${TEMPLATE_HEIGHT}px`,
             printBackground: true
         });
 
@@ -516,11 +336,11 @@ async function renderCertificate(htmlContent) {
 }
 
 export async function generateCertificatePdf(data, level) {
-    return renderCertificate(buildCertificateHtml(data, level, 'accreditation'));
+    return renderCertificate(buildAccreditationCertificateHtml(data, level));
 }
 
 export async function generateMembershipCertificatePdf(data, level) {
-    return renderCertificate(buildCertificateHtml(data, level, 'membership'));
+    return renderCertificate(buildMembershipCertificateHtml(data));
 }
 
 export async function generateFullReportPdf(data, content) {
