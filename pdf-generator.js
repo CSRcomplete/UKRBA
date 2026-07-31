@@ -280,11 +280,33 @@ function arcText(text, radius) {
     }).join('');
 }
 
+// Places evenly spaced beads around the full circumference of a circle of the given radius (px), for the badge's decorative outer ring.
+function beadRing(count, radius, color) {
+    let out = '';
+    for (let i = 0; i < count; i++) {
+        const angle = (360 / count) * i;
+        out += `<span style="position:absolute; left:50%; top:50%; width:0; height:0; transform: rotate(${angle}deg) translate(0, -${radius}px);">
+            <span style="position:absolute; left:-2px; top:-2px; width:4px; height:4px; border-radius:50%; background:${color}; display:block;"></span>
+        </span>`;
+    }
+    return out;
+}
+
+// Generic hand-drawn style signature mark, reused across every certificate (no real signature asset available).
+const SIGNATURE_SVG = `
+    <svg width="150" height="52" viewBox="0 0 150 52" xmlns="http://www.w3.org/2000/svg">
+        <path d="M6 34 C 14 12, 22 12, 26 30 C 29 42, 33 24, 38 18 C 43 12, 46 30, 52 32 C 58 34, 60 14, 66 16 C 72 18, 70 36, 76 34 C 84 31, 84 8, 92 14 C 98 18, 94 34, 100 34 C 108 34, 110 14, 118 18 C 124 21, 122 30, 128 28"
+              fill="none" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M10 40 L 132 40" stroke="#1E293B" stroke-width="1.4" stroke-linecap="round" opacity="0.55"/>
+    </svg>
+`;
+
 function buildBadgeHtml(theme, level) {
     const year = toRoman(new Date().getFullYear());
     return `
-        <div class="badge-outer" style="background: linear-gradient(145deg, ${theme.badgeFrom}, ${theme.badgeTo}); border: 3px solid ${theme.ring};">
-            <div class="badge-ring-text">${arcText('RESPONSIBLE BUSINESS STANDARD', 107)}</div>
+        <div class="badge-outer" style="background: radial-gradient(circle at 35% 28%, ${theme.badgeFrom}, ${theme.badgeTo} 75%); border: 2px solid ${theme.ring};">
+            <div class="badge-decor">${beadRing(40, 116, '#FFFFFF')}</div>
+            <div class="badge-ring-text">${arcText('RESPONSIBLE BUSINESS STANDARD', 104)}</div>
             <div class="badge-inner">
                 <div class="badge-shield" style="background: ${theme.ring};">&#10003;</div>
                 <div class="badge-name">UK SME<br>Responsible Business<br>Association</div>
@@ -301,6 +323,10 @@ function buildCertificateHtml(data, level, variant) {
     const businessName = (data.businessName || 'YOUR BUSINESS').toUpperCase();
     const isMembership = variant === 'membership';
 
+    // Level 3 (silver) reads poorly in colour, so those two keywords stay bold black there, matching the reference set.
+    const keywordColor = level === 3 ? '#0F172A' : theme.text;
+    const kw = (s) => `<span style="color:${keywordColor}; font-weight:700;">${s}</span>`;
+
     const title = 'UK SME Responsible Business Association ' + (isMembership ? 'Membership Certificate' : 'Complete Accreditation Certificate');
     const bannerText = isMembership
         ? `UK SME Responsible Business Association<br>Accredited Member &ndash; LEVEL ${level}`
@@ -309,8 +335,8 @@ function buildCertificateHtml(data, level, variant) {
         ? `is a verified member of the UK SME Responsible Business Association, holding accreditation`
         : `has achieved`;
     const bodyText = isMembership
-        ? `Membership is based on declared, recorded, and reviewable Corporate Social Responsibility (CSR) and Environmental, Social &amp; Governance (ESG) business practices assessed within the UK SME Responsible Business Association framework.`
-        : `This accreditation is based on declared, recorded, and reviewable Corporate Social Responsibility (CSR) and Environmental, Social &amp; Governance (ESG) business practices assessed within the UK SME Responsible Business Association framework.`;
+        ? `Membership is based on declared, recorded, and reviewable ${kw('Corporate Social Responsibility (CSR)')} and ${kw('Environmental, Social &amp; Governance (ESG)')} business practices assessed within the UK SME Responsible Business Association framework.`
+        : `This accreditation is based on declared, recorded, and reviewable ${kw('Corporate Social Responsibility (CSR)')} and ${kw('Environmental, Social &amp; Governance (ESG)')} business practices assessed within the UK SME Responsible Business Association framework.`;
     const footerText = isMembership
         ? `Membership reflects the organisation's current level of CSR and ESG practice maturity and is subject to ongoing review.`
         : `Accreditation reflects the organisation's current level of CSR and ESG practice maturity and is subject to ongoing review.`;
@@ -320,13 +346,13 @@ function buildCertificateHtml(data, level, variant) {
         <html>
         <head>
             <style>
-                @page { size: 13in 9in; margin: 0; }
+                @page { size: 14in 9in; margin: 0; }
                 * { box-sizing: border-box; }
                 body {
                     margin: 0;
                     padding: 0;
                     font-family: 'Helvetica', 'Arial', sans-serif;
-                    width: 13in;
+                    width: 14in;
                     height: 9in;
                     background: #FFFFFF;
                 }
@@ -335,11 +361,12 @@ function buildCertificateHtml(data, level, variant) {
                     width: 100%;
                     height: 100%;
                     border: 3px solid ${theme.border};
-                    padding: 30px 60px;
+                    padding: 26px 60px;
                     position: relative;
                 }
                 .rule { border-top: 1px solid ${theme.border}; border-bottom: 1px solid ${theme.border}; height: 3px; margin: 0 0 24px 0; }
-                h1.title { font-size: 25pt; color: #0F172A; text-align: center; margin: 0 0 6px 0; font-weight: 700; }
+                .rule.bottom { position: absolute; left: 60px; right: 60px; bottom: 22px; margin: 0; }
+                h1.title { font-size: 22pt; color: #0F172A; text-align: center; margin: 0 0 6px 0; font-weight: 600; white-space: nowrap; }
                 .subtitle { text-align: center; font-size: 13pt; color: #334155; margin: 0 0 22px 0; }
                 .certifies-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px 0; }
                 .hr-flank { flex: 1; max-width: 220px; border-top: 1px solid #94A3B8; }
@@ -359,22 +386,23 @@ function buildCertificateHtml(data, level, variant) {
                 .footer-text { text-align: center; font-size: 11.5pt; color: #1E293B; line-height: 1.6; max-width: 720px; margin: 0 0 14px 0; }
                 .verified-at { position: absolute; left: 60px; bottom: 34px; font-size: 10.5pt; color: #1E293B; }
                 .verified-at strong { display: block; font-weight: 700; }
-                .signoff { position: absolute; right: 300px; bottom: 34px; text-align: center; }
-                .signoff .sig { font-family: 'Segoe Script', cursive; font-size: 22pt; color: #1E293B; }
+                .signoff { position: absolute; right: 320px; bottom: 40px; text-align: center; }
+                .signoff .sig { height: 40px; display: flex; align-items: flex-end; justify-content: center; }
                 .signoff .line { border-top: 1px solid #94A3B8; margin-top: 4px; padding-top: 4px; font-size: 10.5pt; color: #1E293B; }
 
                 .badge-outer {
                     position: absolute;
-                    top: 200px;
-                    right: 50px;
-                    width: 240px;
-                    height: 240px;
+                    top: 175px;
+                    right: 40px;
+                    width: 250px;
+                    height: 250px;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
                 }
-                .badge-ring-text { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+                .badge-decor, .badge-ring-text { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
                 .badge-inner {
                     width: 190px;
                     height: 190px;
@@ -386,24 +414,34 @@ function buildCertificateHtml(data, level, variant) {
                     justify-content: center;
                     text-align: center;
                     padding-top: 8px;
+                    box-shadow: inset 0 0 0 1px #E2E8F0;
                 }
-                .badge-shield { width: 30px; height: 30px; border-radius: 6px; color: #FFFFFF; font-size: 15pt; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+                .badge-shield {
+                    width: 26px;
+                    height: 28px;
+                    clip-path: polygon(50% 0%, 100% 18%, 100% 62%, 50% 100%, 0% 62%, 0% 18%);
+                    color: #FFFFFF;
+                    font-size: 13pt;
+                    line-height: 28px;
+                    text-align: center;
+                    margin-bottom: 4px;
+                }
                 .badge-name { font-size: 8.5pt; font-weight: 700; color: #0F172A; line-height: 1.2; margin-bottom: 4px; }
                 .badge-accredited { font-size: 6.5pt; letter-spacing: 1.5px; color: #64748B; font-weight: 700; }
                 .badge-level { font-size: 15pt; font-weight: 700; color: ${theme.text}; }
                 .badge-footer {
                     position: absolute;
-                    bottom: 6px;
+                    bottom: -4px;
                     left: 50%;
                     transform: translateX(-50%);
-                    width: 190px;
+                    width: 210px;
                     color: #FFFFFF;
                     font-size: 7.5pt;
                     font-weight: 700;
                     text-align: center;
                     line-height: 1.3;
-                    padding: 5px 0;
-                    border-radius: 0 0 95px 95px;
+                    padding: 6px 0 8px 0;
+                    clip-path: polygon(0% 0%, 100% 0%, 100% 78%, 50% 100%, 0% 78%);
                 }
             </style>
         </head>
@@ -438,11 +476,13 @@ function buildCertificateHtml(data, level, variant) {
                 </div>
 
                 <div class="signoff">
-                    <div class="sig">UKRBA</div>
+                    <div class="sig">${SIGNATURE_SVG}</div>
                     <div class="line">Authorised by<br>UK SME Responsible Business Association</div>
                 </div>
 
                 ${buildBadgeHtml(theme, level)}
+
+                <div class="rule bottom"></div>
             </div>
         </body>
         </html>
@@ -464,7 +504,7 @@ async function renderCertificate(htmlContent) {
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
         const pdfBuffer = await page.pdf({
-            width: '13in',
+            width: '14in',
             height: '9in',
             printBackground: true
         });
