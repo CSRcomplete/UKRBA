@@ -65,18 +65,50 @@ export async function generatePaidSuite(data, log = console.log) {
         return `${baseUrl}/reports/${filename}`;
     };
 
-    // 1. Calculate Accreditation Level (Targeting only question keys q4-q30)
-    const questionKeys = Object.keys(data).filter(key => key.startsWith('q'));
-    const yesCount = questionKeys.filter(key => data[key] === 'Yes' || data[key] === true).length;
-    
+    // 1. Calculate Accreditation Level
+    // Weighted rubric over the questions that are genuine responsible-business
+    // signals. q4-q10, q20-q22, q27-q28, q30 are business-context/descriptive
+    // fields (industry, size, role, structure, free text, priorities) and are
+    // deliberately excluded from scoring - they were never yes/no maturity
+    // signals and don't belong in the score.
+    const REVIEW_FREQ_SCORES = { "Every 6 months": 2, "Annual": 1, "Every 2 years": 0 };
+    const WASTE_SCORES = { "Minimal": 2, "Moderate": 1, "Significant": 0 };
+    const ENERGY_SCORES = { "Low": 2, "Moderate": 1, "High": 0 };
+    const TRAVEL_FREQ_SCORES = { "No": 2, "Occasionally": 1, "Regularly": 0 };
+    const TRAVEL_MODE_SCORES = { "Remote only": 2, "Walking": 1, "Public transport": 1, "Car": 0, "Flights": -1 };
+    const SUPPLIER_SCORES = { "No": 2, "Yes (UK only)": 1, "Yes (including overseas)": 0 };
+    const MATURITY_SCORES = { "Actively committed": 2, "Doing some things already": 1, "Just getting started": 0 };
+
+    let score = 0;
+    score += REVIEW_FREQ_SCORES[data.q11] ?? 0;                 // policy review cadence
+    score += WASTE_SCORES[data.q14] ?? 0;                        // physical waste level (lower is better)
+    score += ENERGY_SCORES[data.q15] ?? 0;                       // energy intensity (lower is better)
+    score += TRAVEL_FREQ_SCORES[data.q17] ?? 0;                  // work travel frequency (less is better)
+
+    const q18Values = Array.isArray(data.q18) ? data.q18 : [];   // travel modes (multi-select)
+    const travelModeTotal = q18Values.reduce((sum, mode) => sum + (TRAVEL_MODE_SCORES[mode] ?? 0), 0);
+    score += Math.max(0, Math.min(2, travelModeTotal));
+
+    score += SUPPLIER_SCORES[data.q19] ?? 0;                     // supplier/third-party risk
+
+    ["q23", "q24", "q25", "q26"].forEach((key) => {              // CSR fundamentals: owner, tracking, charity, community
+        score += data[key] === "Yes" ? 2 : 0;
+    });
+
+    score += MATURITY_SCORES[data.q29] ?? 0;                     // self-assessed maturity stage
+
+    const MAX_SCORE = 22;
+    const percentage = score / MAX_SCORE;
+
     let level = 1;
-    // Adjusted for a ~26 question form
-    if (yesCount >= 24) level = 5;
-    else if (yesCount >= 18) level = 4;
-    else if (yesCount >= 12) level = 3;
-    else if (yesCount >= 6) level = 2;
-    
-    data.level = level; 
+    if (percentage >= 0.86) level = 5;
+    else if (percentage >= 0.68) level = 4;
+    else if (percentage >= 0.45) level = 3;
+    else if (percentage >= 0.23) level = 2;
+
+    data.assessmentScore = score;
+    data.assessmentMaxScore = MAX_SCORE;
+    data.level = level;
     
     // Get the badge URL
     const badgeUrl = ACCREDITATION_BADGES[level];
