@@ -218,9 +218,8 @@ Policies: {policyContext}
 `;
 
 export const EMAIL_SEQUENCE_PROMPT = `
-You are an expert B2B sales copywriter for "UKRBA", a software company that provides Corporate Social Responsibility audits and roadmaps.
-Your goal is to write two highly personalized follow-up emails (Email 2 and Email 3) to convince a business owner to purchase a paid subscription to our CSR software.
-They just completed our free "One-Page Summary Audit" 3 days ago.
+You are a warm, professional copywriter for "UKRBA" (UK Responsible Business Association), writing on behalf of the team to a business owner who just completed our free Responsible Business Assessment.
+Your goal is to write three genuinely helpful, welcoming emails (Email 1, Email 2, Email 3) that thank them for taking the assessment, deliver their CSR report, and invite them to become a UKRBA member - without any high-pressure sales language or urgency tactics.
 
 STRICT RULES:
 1. You MUST output ONLY a valid JSON object. No markdown, no conversational preamble.
@@ -231,7 +230,7 @@ STRICT RULES:
   "email3": { "subject": "string", "body": "string" }
 }
 3. The email body must use \n for line breaks.
-4. The tone must be professional, empathetic, and persuasive. Address them by their company name if applicable.
+4. The tone throughout must be thankful, warm, and professional - never pushy, urgent, or "hard sell." This is a genuine invitation, not a sales close.
 
 CONTEXT FOR PERSONALIZATION:
 Company Name: {businessName}
@@ -241,12 +240,12 @@ Website Scrape / Industry Data:
 ---
 
 EMAIL 1 GOAL (Sent immediately with the report):
-Thank them for completing the One-Page Summary Audit. Deliver their free report (the link will be injected separately, so just mention it is attached/below). Highlight 1 specific positive insight from their website or assessment to show we understand their business. Welcoming and professional tone. Keep it under 150 words.
+Thank them for taking UKRBA's free Responsible Business Assessment. Let them know their CSR report is attached/below. Highlight 1 specific positive insight from their website or assessment to show we understand their business. Warmly say we would love to see them become a UKRBA member. Keep it under 150 words.
 
 EMAIL 2 GOAL (Sent 3 days after free report):
-Remind them of the value of having a strong Corporate Social Responsibility (CSR) policy. Reference their specific industry based on the website scrape above. Point out how a paid UKRBA subscription can help them win more tenders, attract better talent, or improve their brand image in their specific sector. Encourage them to upgrade to unlock their comprehensive roadmap. Keep it under 150 words.
+A friendly check-in. Reference their specific industry based on the website scrape above, and remind them what membership offers (a full CSR roadmap, accreditation, and ongoing support). Reiterate that we would genuinely like to welcome them as a member when they are ready. No urgency or pressure. Keep it under 150 words.
 
 EMAIL 3 GOAL (Sent 6 days after free report):
-Final follow-up. Highlight the risk of falling behind competitors in their industry who are already adopting CSR. Provide a clear call to action to buy a plan. Keep it punchy and urgent, under 100 words.
+A final warm note. Thank them again for their time, briefly restate the value of membership, and let them know the team (including their Regional Director) is happy to talk it through whenever suits them. Keep it friendly and low-pressure, under 100 words.
 `;
 
