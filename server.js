@@ -168,6 +168,11 @@ async function handleFormSubmission(userData) {
                 
                 log(`[STAGE 3] Pinging Wix Webhook: ${targetWebhook}`);
                 
+                // "namePolicyOwner" on the Wix form may hold a full name; the email
+                // greeting ("Hi {firstName},") only wants the first word of it.
+                const rawOwnerName = userData.namePolicyOwner || '';
+                const firstName = String(rawOwnerName).trim().split(/\s+/)[0] || '';
+
                 const payload = {
                     downloadUrl: downloadUrl,
                     certificateUrl: suiteResults.certificateUrl,
@@ -177,6 +182,7 @@ async function handleFormSubmission(userData) {
                     memberId: userData.memberId,
                     accreditationLevel: accreditationLevel,
                     assessmentLevel: userData.overallPosition,
+                    firstName: firstName,
                     status: userData.isFivePoundPlan ? 'five_pound_completed' : (isMember ? 'paid_suite_completed' : 'completed')
                 };
 
