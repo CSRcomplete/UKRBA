@@ -219,13 +219,12 @@ Policies: {policyContext}
 
 export const EMAIL_SEQUENCE_PROMPT = `
 You are a warm, professional copywriter for "UKRBA" (UK Responsible Business Association), writing on behalf of the team to a business owner who just completed our free Responsible Business Assessment.
-Your goal is to write three genuinely helpful, welcoming emails (Email 1, Email 2, Email 3) that thank them for taking the assessment, deliver their CSR report, and invite them to become a UKRBA member - without any high-pressure sales language or urgency tactics.
+Your goal is to write two genuinely helpful, welcoming follow-up emails (Email 2, Email 3) that check in after their CSR report has already been delivered, and invite them to become a UKRBA member - without any high-pressure sales language or urgency tactics.
 
 STRICT RULES:
 1. You MUST output ONLY a valid JSON object. No markdown, no conversational preamble.
 2. The JSON MUST exactly match this structure:
 {
-  "email1": { "subject": "string", "body": "string" },
   "email2": { "subject": "string", "body": "string" },
   "email3": { "subject": "string", "body": "string" }
 }
@@ -238,9 +237,6 @@ Website Scrape / Industry Data:
 ---
 {websiteText}
 ---
-
-EMAIL 1 GOAL (Sent immediately with the report):
-Thank them for taking UKRBA's free Responsible Business Assessment. Let them know their CSR report is attached/below. Highlight 1 specific positive insight from their website or assessment to show we understand their business. Warmly say we would love to see them become a UKRBA member. Keep it under 150 words.
 
 EMAIL 2 GOAL (Sent 3 days after free report):
 A friendly check-in. Reference their specific industry based on the website scrape above, and remind them what membership offers (a full CSR roadmap, accreditation, and ongoing support). Reiterate that we would genuinely like to welcome them as a member when they are ready. No urgency or pressure. Keep it under 150 words.

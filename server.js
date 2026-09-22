@@ -176,13 +176,12 @@ async function handleFormSubmission(userData) {
                     email: userData.email,
                     memberId: userData.memberId,
                     accreditationLevel: accreditationLevel,
+                    assessmentLevel: userData.overallPosition,
                     status: userData.isFivePoundPlan ? 'five_pound_completed' : (isMember ? 'paid_suite_completed' : 'completed')
                 };
 
                 if ((!isMember || userData.isFivePoundPlan || !userData.isMember) && userData.generatedEmails) {
                     const emails = userData.generatedEmails;
-                    payload.email1Body = emails.email1?.body;
-                    payload.email1Subject = emails.email1?.subject;
                     payload.email2Body = emails.email2?.body;
                     payload.email2Subject = emails.email2?.subject;
                     payload.email3Body = emails.email3?.body;
