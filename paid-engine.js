@@ -5,6 +5,9 @@ import { PAID_POLICIES, ACCREDITATION_BADGES } from './paid-prompts.js';
 import { callClaude } from './ai-engine.js';
 import { generatePolicyPdf, generateCertificatePdf, generateMembershipCertificatePdf, generateFullReportPdf } from './pdf-generator.js';
 
+// Persistent storage: set REPORTS_DIR to a Railway Volume mount path (e.g. /data/reports)
+const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'public', 'reports');
+
 const STRICT_RULES = `
 
 =========================================
@@ -55,10 +58,10 @@ export async function generatePaidSuite(data, log = console.log) {
     const savePdf = (buffer, prefix) => {
         const fileId = crypto.randomBytes(8).toString('hex');
         const filename = `${prefix}_${fileId}.pdf`;
-        const filepath = path.join(process.cwd(), 'public', 'reports', filename);
+        const filepath = path.join(REPORTS_DIR, filename);
         
-        if (!fs.existsSync(path.join(process.cwd(), 'public', 'reports'))) {
-            fs.mkdirSync(path.join(process.cwd(), 'public', 'reports'), { recursive: true });
+        if (!fs.existsSync(REPORTS_DIR)) {
+            fs.mkdirSync(REPORTS_DIR, { recursive: true });
         }
         
         fs.writeFileSync(filepath, buffer);
@@ -307,10 +310,10 @@ export async function generateSingleAsset(data, assetId, log = console.log) {
     
     const fileId = crypto.randomBytes(8).toString('hex');
     const filename = `${assetId}_${fileId}.pdf`;
-    const filepath = path.join(process.cwd(), 'public', 'reports', filename);
+    const filepath = path.join(REPORTS_DIR, filename);
     
-    if (!fs.existsSync(path.join(process.cwd(), 'public', 'reports'))) {
-        fs.mkdirSync(path.join(process.cwd(), 'public', 'reports'), { recursive: true });
+    if (!fs.existsSync(REPORTS_DIR)) {
+        fs.mkdirSync(REPORTS_DIR, { recursive: true });
     }
     
     fs.writeFileSync(filepath, pdfBuffer);

@@ -9,6 +9,9 @@ import { generatePdfFromJSON, generatePolicyPdf, generateCertificatePdf } from '
 import { scrapeWebsite } from './scraper.js';
 import { generatePaidSuite, generateSingleAsset } from './paid-engine.js';
 
+// Persistent storage: set REPORTS_DIR to a Railway Volume mount path (e.g. /data/reports)
+const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'public', 'reports');
+
 const app = express();
 
 // Robust CORS configuration
@@ -38,7 +41,7 @@ app.get('/api/logs', (req, res) => {
 });
 
 app.get('/api/list-reports', (req, res) => {
-    const dirPath = path.join(process.cwd(), 'public', 'reports');
+    const dirPath = REPORTS_DIR;
     if (!fs.existsSync(dirPath)) {
         return res.json([]);
     }
@@ -69,7 +72,7 @@ app.post('/api/upload-report', (req, res) => {
     
     // Safety check to prevent path traversal
     const safeFilename = path.basename(filename);
-    const dirPath = path.join(process.cwd(), 'public', 'reports');
+    const dirPath = REPORTS_DIR;
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
@@ -100,7 +103,8 @@ const logError = (...args) => {
 };
 
 // Serve the reports folder publicly so Wix can download the PDFs
-app.use('/reports', express.static('public/reports'));
+fs.mkdirSync(REPORTS_DIR, { recursive: true });
+app.use('/reports', express.static(REPORTS_DIR));
 
 /**
  * UNIFIED FORM SUBMISSION
